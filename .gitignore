@@ -1,0 +1,9 @@
+# IDE
+.idea/
+
+# Dependencies
+/vendor/
+
+# Test
+phpunit.xml
+.phpunit.result.cache

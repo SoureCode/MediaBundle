@@ -1,0 +1,41 @@
+{
+  "name": "sourecode/media-bundle",
+  "type": "symfony-bundle",
+  "description": "A symfony bundle to work easier with media resources.",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "chapterjason",
+      "email": "jason@sourecode.dev"
+    }
+  ],
+  "require": {
+    "php": ">=7.4",
+    "symfony/http-kernel": "^3.0 || ^4.0 || ^5.0"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-master",
+    "symfony/phpunit-bridge": "^5.1"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "0.1.0-DEV"
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "SoureCode\\MediaBundle\\": "src/"
+    },
+    "exclude-from-classmap": [
+      "/Tests/"
+    ]
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "SoureCode\\MediaBundle\\Tests\\": "Tests/"
+    }
+  }
+}
