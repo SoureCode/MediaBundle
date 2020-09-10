@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Response;
+namespace SoureCode\Response;
 
 use SoureCode\MediaBundle\Range\Range;
 use SoureCode\MediaBundle\Range\RangeSet;
