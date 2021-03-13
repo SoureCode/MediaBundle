@@ -7,3 +7,5 @@
 # Test
 phpunit.xml
 .phpunit.result.cache
+
+.DS_STORE

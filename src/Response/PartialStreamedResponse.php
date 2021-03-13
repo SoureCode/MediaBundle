@@ -8,6 +8,7 @@ use SoureCode\MediaBundle\Resource\MediaResource;
 use SoureCode\MediaBundle\Writer\ResourceStreamWriter;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PartialStreamedResponse extends StreamedResponse
@@ -31,16 +32,20 @@ class PartialStreamedResponse extends StreamedResponse
      */
     private array $ranges;
 
+    private string $contentDisposition;
+
     /**
      * PartialResponse constructor.
      * @param MediaResource $resource
+     * @param string $contentDisposition
      * @param resource|null $outputHandle
      */
-    public function __construct(MediaResource $resource, $outputHandle = null)
+    public function __construct(MediaResource $resource, string $contentDisposition = ResponseHeaderBag::DISPOSITION_ATTACHMENT, $outputHandle = null)
     {
         parent::__construct();
         $this->resource = $resource;
         $this->outputHandle = $outputHandle;
+        $this->contentDisposition = $contentDisposition;
     }
 
     public function prepare(Request $request): PartialStreamedResponse
@@ -61,9 +66,10 @@ class PartialStreamedResponse extends StreamedResponse
     {
         if (!$this->sendHeaders) {
             $basename = basename($this->resource->getName());
+            $dispositionHeader = $this->headers->makeDisposition($this->contentDisposition, $basename);
 
             $this->headers->set('Accept-Ranges', "bytes");
-            $this->headers->set('Content-Disposition', 'attachment; filename="' . $basename . '"');
+            $this->headers->set('Content-Disposition', $dispositionHeader);
             $this->headers->set('Content-Type', $this->resource->getMimeType());
 
             if ($this->rangeSet === null) {
@@ -71,12 +77,16 @@ class PartialStreamedResponse extends StreamedResponse
 
                 $this->headers->set('Content-Length', $this->resource->getSize());
             } else {
-                $responseBodySize = \array_reduce($this->ranges, static function (int $size, Range $range) {
-                    return $size + $range->getLength();
-                }, 0);
+                $responseBodySize = \array_reduce(
+                    $this->ranges,
+                    static function (int $size, Range $range) {
+                        return $size + $range->getLength();
+                    },
+                    0
+                );
 
                 $this->setStatusCode(Response::HTTP_PARTIAL_CONTENT);
-                $contentRangeHeader = 'bytes ' . \implode(',', $this->ranges) . '/' . $this->resource->getSize();
+                $contentRangeHeader = 'bytes '.\implode(',', $this->ranges).'/'.$this->resource->getSize();
 
                 $this->headers->set('Content-Range', $contentRangeHeader);
                 $this->headers->set('Content-Length', (string)$responseBodySize);
@@ -95,17 +105,21 @@ class PartialStreamedResponse extends StreamedResponse
             $resource = $this->resource;
 
             if ($this->rangeSet === null) {
-                $this->setCallback(static function () use ($resource, $writer) {
-                    $writer->write($resource);
-                });
+                $this->setCallback(
+                    static function () use ($resource, $writer) {
+                        $writer->write($resource);
+                    }
+                );
             } else {
                 $ranges = $this->ranges;
 
-                $this->setCallback(static function () use ($resource, $writer, $ranges) {
-                    foreach ($ranges as $range) {
-                        $writer->write($resource, $range);
+                $this->setCallback(
+                    static function () use ($resource, $writer, $ranges) {
+                        foreach ($ranges as $range) {
+                            $writer->write($resource, $range);
+                        }
                     }
-                });
+                );
             }
 
             $this->sendContent = true;
